@@ -9,7 +9,7 @@ const runPuppeteer = async () => {
     try {
         const browser = await puppeteer.launch({ headless: false });
         const csvFile = await csvtojson().fromFile('core.csv');
-        const finalData = []
+        const finalData = [];
         await eachOfLimit(csvFile, 10, async (row) => {
             const page = await browser.newPage();
             const sku = row['Core Products Item #'];
@@ -32,13 +32,14 @@ const runPuppeteer = async () => {
                 finalData.push({
                     sku: sku,
                     options: optionTexts.join(',')
-                })
-
-
+                });
             } catch (error) {
                 console.error(`Error processing SKU ${sku}:`, error);
+            } finally {
+                // Close the page to free up memory
+                await page.close();
             }
-        })
+        });
 
         await writeFile('output.json', JSON.stringify(finalData, null, 2));
 
