@@ -8,7 +8,7 @@ import { eachOfLimit } from 'async';
 const runPuppeteer = async () => {
     try {
         const browser = await puppeteer.launch({ headless: false });
-        const csvFile = await csvtojson().fromFile('core.csv');
+        const csvFile = await csvtojson().fromFile('core2.csv');
         const finalData = [];
         await eachOfLimit(csvFile, 10, async (row) => {
             const page = await browser.newPage();
@@ -25,15 +25,24 @@ const runPuppeteer = async () => {
                 // Use Cheerio to load the page content
                 const $ = cheerio.load(await page.content());
 
-                const optionTexts = [];
-                $("#static-product-form-0data-product-option-0 option").each((index, element) => {
-                    optionTexts.push($(element).text());
+                const selectElement = $("select[name='id']");
+                const sku = selectElement.find("option[selected='selected']").attr('data-sku');
+                const optionData = [];
+                selectElement.find("option").each((index, element) => {
+                    const option = $(element);
+                    const optionText = option.text().trim();
+                    const dataSku = option.attr('data-sku');
+                    const texttt = `Option Text: ${optionText}, Data SKU: ${dataSku}`;
+                    optionData.push({
+                        text: optionText,
+                        dataSku: dataSku
+                    })
+
                 });
                 finalData.push({
                     sku: sku,
-                    options: optionTexts.join(',')
+                    options: optionData
                 });
-
             } catch (error) {
                 console.error(`Error processing SKU ${sku}:`, error);
             } finally {
@@ -51,3 +60,4 @@ const runPuppeteer = async () => {
 };
 
 runPuppeteer();
+
